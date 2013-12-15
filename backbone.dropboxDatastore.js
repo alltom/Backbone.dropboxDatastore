@@ -153,24 +153,27 @@
   // Static methods of DropboxDatastore
   _.extend(Backbone.DropboxDatastore, {
 
-    _datastores: {},
+    _datastorePromises: {},
 
     getDatastore: function(datastoreId, callback) {
-      var datastore = this._datastores[datastoreId],
+      var datastorePromise = this._datastorePromises[datastoreId],
           onOpenDatastore;
 
-      if(datastore) {
+      if(!datastorePromise) {
+        datastorePromise = this._datastorePromises[datastoreId] = Backbone.$.Deferred();
 
-        // To be consistent to async nature of this method defers invoking
-        // of the function using Underscore defer
-        _.defer(callback, datastore);
-      } else {
         // Bind and partial applying _onOpenDatastore by callback
         onOpenDatastore = _.bind(this._onOpenDatastore, this, datastoreId, callback);
 
         // we can open only one instance of Datastore simultaneously
         this.getDatastoreManager()._getOrCreateDatastoreByDsid(datastoreId, onOpenDatastore);
       }
+
+      // To be consistent to async nature of this method defers invoking
+      // of the function using Underscore defer
+      datastorePromise.done(function (datastore) {
+        _.defer(callback, datastore);
+      });
     },
 
     _onOpenDatastore: function(datastoreId, callback, error, datastore) {
@@ -178,8 +181,7 @@
         throw new Error('Error on _getOrCreateDatastoreByDsid: ' + error.responseText);
       }
       // cache opened datastore
-      this._datastores[datastoreId] = datastore;
-      callback(datastore);
+      this._datastorePromises[datastoreId].resolve(datastore);
     },
 
     getDatastoreManager: function() {

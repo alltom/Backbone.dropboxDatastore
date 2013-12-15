@@ -36,7 +36,7 @@
     // Insert new record to *Dropbox.Datastore.Table*.
     create: function(model, callback) {
       this.getTable(function(table) {
-        var record = table.insert(model.toJSON());
+        var record = table.insert(model.attributes);
         callback(Backbone.DropboxDatastore.recordToJson(record));
       });
     },
@@ -46,9 +46,9 @@
       this.getTable(_.bind(function(table) {
         var record = this._findRecordSync(table, model);
         if (record) {
-          record.update(model.toJSON());
+          record.update(model.attributes);
         } else {
-          record = table.insert(model.toJSON());
+          record = table.insert(model.attributes);
         }
         callback(Backbone.DropboxDatastore.recordToJson(record));
       }, this));
